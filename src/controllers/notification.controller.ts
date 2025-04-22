@@ -3,7 +3,9 @@ import { Request, Response } from "express";
 
 export const getAllNotifications = async (req: Request, res: Response) => {
   try {
-    const notifications = await Notification.find().populate("user");
+    const notifications = await Notification.find()
+      .populate("user")
+      .sort({ createdAt: -1 });
     res.status(200).json(notifications);
   } catch (error) {
     console.error("❌ Failed to fetch notifications:", error);

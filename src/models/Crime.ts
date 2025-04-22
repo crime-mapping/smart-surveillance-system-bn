@@ -37,7 +37,7 @@ const CrimeSchema = new Schema<ICrime>(
     crimeDescription: { type: String },
     crimeType: { type: String, enum: Object.values(CrimeType), required: true },
     crimeLocation: { type: String, required: true },
-    dateOfOccurrence: { type: Date, required: true },
+    dateOfOccurrence: { type: Date, default: Date.now(), required: true },
     emergencyLevel: {
       type: String,
       enum: Object.values(EmergencyLevel),

@@ -12,14 +12,14 @@ function generateEmailTemplate(content: string): string {
     <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
       <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="padding: 20px; text-align: center; background-color:rgb(156, 190, 240);">
-          <img src=${`https://umuhanda.netlify.app/Umuhanda_logo.png`} alt="Company Logo" style="max-height: 50px;" />
+          <img src=${`https://umuhanda.netlify.app/crime_logo.png`} alt="Company Logo" style="max-height: 50px;" />
         </div>
         <div style="padding: 30px; color: #333;">
           ${content}
         </div>
         <div style="padding: 20px; text-align: center; font-size: 12px; color: #999; background-color: #f0f0f0;">
-          <p>If you need help, contact us at <a href="mailto:support@umuhanda.com">support@umuhanda.com</a> or call +250 787 787 878</p>
-          <p>&copy; ${new Date().getFullYear()} Umuhanda. All rights reserved.</p>
+          <p>If you need help, contact us at <a href="mailto:support@smart.surveillance.system.com">support@smart.surveillance.system.com</a> or call +250 787 787 878</p>
+          <p>&copy; ${new Date().getFullYear()} smart-surveillance-system. All rights reserved.</p>
         </div>
       </div>
     </div>

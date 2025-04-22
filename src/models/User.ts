@@ -1,9 +1,10 @@
 import mongoose, { Schema, Document } from "mongoose";
+import bcrypt from "bcryptjs";
 import { BaseModelFields, BaseModelOptions } from "./BaseModel";
 
 export enum Role {
   ADMIN = "ADMIN",
-  NORMAL = "NORMAL",
+  SUPERADMIN = "SUPERADMIN",
 }
 
 export interface IUser extends Document {
@@ -11,11 +12,11 @@ export interface IUser extends Document {
   phone: string;
   email: string;
   role: Role;
-  hasSyncedWithAI: boolean;
   notificationEnabled: boolean;
   password: string;
-  cameras: mongoose.Schema.Types.ObjectId[];
-  hasPremiumAccess: boolean;
+  twoFactorEnabled: boolean;
+  hasGoogleAuth: boolean;
+  comparePassword(password: string): Promise<boolean>;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -23,15 +24,26 @@ const UserSchema = new Schema<IUser>(
     names: { type: String, required: true },
     phone: { type: String, required: true },
     email: { type: String, required: true },
-    role: { type: String, enum: Object.values(Role), default: Role.NORMAL },
-    hasSyncedWithAI: { type: Boolean, default: false },
+    role: { type: String, enum: Object.values(Role), default: Role.ADMIN },
     notificationEnabled: { type: Boolean, default: true },
     password: { type: String, required: true },
-    cameras: [{ type: Schema.Types.ObjectId, ref: "Camera" }],
-    hasPremiumAccess: { type: Boolean, default: false },
+    twoFactorEnabled: { type: Boolean, default: false },
+    hasGoogleAuth: { type: Boolean, default: false },
     ...BaseModelFields,
   },
   BaseModelOptions
 );
+
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+UserSchema.methods.comparePassword = async function (
+  password: string
+): Promise<boolean> {
+  return bcrypt.compare(password, this.password);
+};
 
 export default mongoose.model<IUser>("User", UserSchema);

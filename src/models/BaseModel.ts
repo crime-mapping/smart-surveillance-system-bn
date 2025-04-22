@@ -1,9 +1,11 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 export const BaseModelFields = {
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date },
   deletedAt: { type: Date },
+  lastUpdatedBy: { type: mongoose.Schema.Types.ObjectId, default: null },
+  desactivatedBy: { type: mongoose.Schema.Types.ObjectId, default: null },
   active: { type: Boolean, default: true },
 };
 
