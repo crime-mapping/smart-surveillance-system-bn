@@ -2,6 +2,16 @@ import { AuthRequest } from "../middleware/authMiddleware";
 import Camera from "../models/Camera";
 import { Request, Response } from "express";
 import SupervisedLocation from "../models/SupervisedLocation";
+import ffmpeg from "fluent-ffmpeg";
+
+function isStreamValid(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    ffmpeg(url).ffprobe((err, data) => {
+      if (err) return resolve(false);
+      resolve(true);
+    });
+  });
+}
 
 export const getAllCameras = async (req: AuthRequest, res: Response) => {
   try {
@@ -22,6 +32,13 @@ export const createCamera = async (req: AuthRequest, res: Response) => {
     if (!name || !streamUrl || !location) {
       res.status(400).json({
         error: "Camera Name, location and streamUrl of the camera are required",
+      });
+      return;
+    }
+    if (!(await isStreamValid(streamUrl))) {
+      res.status(400).json({
+        error:
+          "The Camera Stream URl you're trying to use is not valid or doesn't exist !",
       });
       return;
     }
