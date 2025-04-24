@@ -12,7 +12,7 @@ import { getCrimeDashboardStats } from "../controllers/crime.controller";
 
 const router = express.Router();
 
-router.get("/", authMiddleware, getAllCameras);
+router.get("/", getAllCameras);
 router.post("/", authMiddleware, createCamera);
 router.put("/:id", authMiddleware, updateCamera);
 router.put("/connect/:id", authMiddleware, connectCamera);
