@@ -11,6 +11,17 @@ export const getAllCrimes = async (req: Request, res: Response) => {
   }
 };
 
+export const getSingleCrime = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const crime = await Crime.findById(id);
+    res.status(200).json(crime);
+  } catch (error) {
+    console.error("❌ Failed to fetch single crime:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export const createCrime = async (req: Request, res: Response) => {
   try {
     const crime = await Crime.create(req.body);

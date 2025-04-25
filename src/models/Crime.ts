@@ -26,7 +26,7 @@ export enum CrimeType {
 export interface ICrime extends Document {
   crimeDescription?: string;
   crimeType: CrimeType;
-  crimeLocation: string;
+  crimeLocation: mongoose.Schema.Types.ObjectId;
   dateOfOccurrence: Date;
   emergencyLevel: EmergencyLevel;
   supportingImage?: string;
@@ -36,7 +36,11 @@ const CrimeSchema = new Schema<ICrime>(
   {
     crimeDescription: { type: String },
     crimeType: { type: String, enum: Object.values(CrimeType), required: true },
-    crimeLocation: { type: String, required: true },
+    crimeLocation: {
+      type: Schema.Types.ObjectId,
+      ref: "SupervisedLocation",
+      required: true,
+    },
     dateOfOccurrence: { type: Date, default: Date.now(), required: true },
     emergencyLevel: {
       type: String,

@@ -18,6 +18,5 @@ router.put("/:id", authMiddleware, updateCamera);
 router.put("/connect/:id", authMiddleware, connectCamera);
 router.put("/disconnect/:id", authMiddleware, disconnectCamera);
 router.put("/desactivate/:id", authMiddleware, desactivateCamera);
-router.get("/statistics", getCrimeDashboardStats);
 
 export default router;

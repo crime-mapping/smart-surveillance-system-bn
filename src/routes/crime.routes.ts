@@ -5,15 +5,17 @@ import {
   updateCrime,
   deleteCrime,
   getCrimeDashboardStats,
+  getSingleCrime,
 } from "../controllers/crime.controller";
 import authMiddleware from "../middleware/authMiddleware";
 
 const router = express.Router();
 
 router.get("/", authMiddleware, getAllCrimes);
+router.get("/statistics", authMiddleware, getCrimeDashboardStats);
+router.get("/:id", authMiddleware, getSingleCrime);
 router.post("/", authMiddleware, createCrime);
 router.put("/:id", authMiddleware, updateCrime);
 router.delete("/:id", authMiddleware, deleteCrime);
-router.get("/statistics", authMiddleware, getCrimeDashboardStats);
 
 export default router;

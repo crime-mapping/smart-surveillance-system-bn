@@ -16,6 +16,7 @@ export interface IUser extends Document {
   password: string;
   twoFactorEnabled: boolean;
   hasGoogleAuth: boolean;
+  blocked: boolean;
   comparePassword(password: string): Promise<boolean>;
 }
 
@@ -29,6 +30,7 @@ const UserSchema = new Schema<IUser>(
     password: { type: String, required: true },
     twoFactorEnabled: { type: Boolean, default: false },
     hasGoogleAuth: { type: Boolean, default: false },
+    blocked: { type: Boolean, default: false },
     ...BaseModelFields,
   },
   BaseModelOptions

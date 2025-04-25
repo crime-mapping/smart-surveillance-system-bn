@@ -19,6 +19,21 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const getSingleUser = async (req: Request, res: Response) => {
+  try {
+    const user = await User.findOne({ _id: req.params.id, active: true });
+    if (user) {
+      res.status(200).json(user);
+    } else {
+      res.status(400).json("User not found");
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("❌ Failed to fetch single user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export const createUser = async (req: Request, res: Response) => {
   try {
     const email = req.body.email;
@@ -37,6 +52,7 @@ export const createUser = async (req: Request, res: Response) => {
         .json({ error: "Phone number is already in use. Please try another." });
       return;
     }
+
     const user = await User.create(req.body);
     res.status(201).json(user);
   } catch (error) {
@@ -47,15 +63,17 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, phone, email } = req.body;
-    const updateUser = new User({
+    const { name, phone, email, role } = req.body;
+    const updateUser = {
       name,
       phone,
       email,
+      role,
       lastUpdatedBy: req.user?.id,
-    });
+    };
     const user = await User.findByIdAndUpdate(req.params.id, updateUser, {
       new: true,
+      runValidators: true,
     });
 
     res.status(200).json(user);
@@ -67,7 +85,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 
 export const desactivateUser = async (req: AuthRequest, res: Response) => {
   try {
-    const camera = await User.findOneAndUpdate(
+    const updatedUser = await User.findOneAndUpdate(
       { _id: req.params.id },
       {
         $set: {
@@ -77,9 +95,53 @@ export const desactivateUser = async (req: AuthRequest, res: Response) => {
       },
       { new: true }
     );
-    if (!camera)
-      res.status(403).json({ error: "Not allowed or camera not found" });
-    res.status(200).json(camera);
+    if (!updateUser)
+      res.status(403).json({ error: "Not allowed or user not found" });
+    res.status(200).json(updateUser);
+  } catch (error) {
+    console.error("❌ Failed to update camera:", error);
+    res.status(400).json({ error: "Bad Request" });
+  }
+};
+
+export const userAccess = async (req: AuthRequest, res: Response) => {
+  const action = req.body.action;
+  try {
+    if (action == "block") {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: req.params.id },
+        {
+          $set: {
+            blocked: true,
+            lastUpdatedBy: req.user?.id,
+          },
+        },
+        { new: true }
+      );
+      if (!updateUser) {
+        res.status(403).json({ error: "Not allowed or User not found" });
+        return;
+      }
+    } else if (action == "unblock") {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: req.params.id },
+        {
+          $set: {
+            blocked: false,
+            lastUpdatedBy: req.user?.id,
+          },
+        },
+        { new: true }
+      );
+      if (!updateUser) {
+        res.status(403).json({ error: "Not allowed or User not found" });
+        return;
+      }
+    } else {
+      res.status(403).json({ error: "Your Request can't be processed" });
+    }
+    res.status(200).json({ message: `${action} request handled successful` });
+    return;
   } catch (error) {
     console.error("❌ Failed to update camera:", error);
     res.status(400).json({ error: "Bad Request" });
