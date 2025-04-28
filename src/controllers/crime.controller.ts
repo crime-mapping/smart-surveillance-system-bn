@@ -3,7 +3,9 @@ import { Request, Response } from "express";
 
 export const getAllCrimes = async (req: Request, res: Response) => {
   try {
-    const crimes = await Crime.find();
+    const crimes = await Crime.find()
+      .populate("crimeLocation")
+      .sort({ createdAt: -1 });
     res.status(200).json(crimes);
   } catch (error) {
     console.error("❌ Failed to fetch crimes:", error);
@@ -14,7 +16,7 @@ export const getAllCrimes = async (req: Request, res: Response) => {
 export const getSingleCrime = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const crime = await Crime.findById(id);
+    const crime = await Crime.findById(id).populate("crimeLocation");
     res.status(200).json(crime);
   } catch (error) {
     console.error("❌ Failed to fetch single crime:", error);
@@ -117,16 +119,41 @@ export const getCrimeDashboardStats = async (req: Request, res: Response) => {
     ]);
 
     const mostAffectedLocationAgg = await Crime.aggregate([
-      { $group: { _id: "$crimeLocation", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 1 },
+      {
+        $group: { _id: "$crimeLocation", count: { $sum: 1 } },
+      },
+      {
+        $sort: { count: -1 },
+      },
+      {
+        $limit: 1,
+      },
+      {
+        $lookup: {
+          from: "supervisedlocations",
+          localField: "_id",
+          foreignField: "_id",
+          as: "locationDetails",
+        },
+      },
+      {
+        $unwind: "$locationDetails",
+      },
+      {
+        $project: {
+          count: 1,
+          location: "$locationDetails",
+        },
+      },
     ]);
 
     const emergencyDistribution = await Crime.aggregate([
       { $group: { _id: "$emergencyLevel", count: { $sum: 1 } } },
     ]);
 
-    const recentCrime = await Crime.findOne().sort({ createdAt: -1 });
+    const recentCrime = await Crime.findOne()
+      .sort({ createdAt: -1 })
+      .populate("crimeLocation");
 
     if (totalCrimes === 0) {
       res.status(200).json({
@@ -155,7 +182,8 @@ export const getCrimeDashboardStats = async (req: Request, res: Response) => {
       recentCrime,
       monthlyCrimes,
       mostCommonCrimeType: mostCommonCrimeTypeAgg[0]?._id || null,
-      mostAffectedLocation: mostAffectedLocationAgg[0]?._id || null,
+      mostAffectedLocation:
+        mostAffectedLocationAgg[0]?.location.location || null,
       emergencyDistribution,
     });
   } catch (error) {

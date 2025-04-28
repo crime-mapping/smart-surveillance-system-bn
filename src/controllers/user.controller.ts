@@ -19,15 +19,19 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const getSingleUser = async (req: Request, res: Response) => {
+export const getSingleUser = async (req: AuthRequest, res: Response) => {
   try {
-    const user = await User.findOne({ _id: req.params.id, active: true });
+    const user = await User.findOne({
+      _id: req.user?.id,
+      active: true,
+    }).populate("lastUpdatedBy");
     if (user) {
       res.status(200).json(user);
+      return;
     } else {
       res.status(400).json("User not found");
+      return;
     }
-    res.status(200).json(user);
   } catch (error) {
     console.error("❌ Failed to fetch single user:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -61,11 +65,49 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
+export const changePassword = async (req: AuthRequest, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!changePassword || !newPassword) {
+      res
+        .status(404)
+        .json({ error: "Both current and new password are required !" });
+      return;
+    }
+
+    if (!req.user?.id) {
+      res.status(401).json({
+        error: "Unauthorized. Please log in to change Your Password.",
+      });
+      return;
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      res.status(400).json({ error: "Incorrect Current Password." });
+      return;
+    }
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully!" });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, phone, email, role } = req.body;
+    const { names, phone, email, role } = req.body;
     const updateUser = {
-      name,
+      names,
       phone,
       email,
       role,
@@ -76,7 +118,9 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       runValidators: true,
     });
 
-    res.status(200).json(user);
+    if (user) {
+      res.status(200).json(user);
+    }
   } catch (error) {
     console.error("❌ Failed to update user:", error);
     res.status(400).json({ error: "Bad Request" });
