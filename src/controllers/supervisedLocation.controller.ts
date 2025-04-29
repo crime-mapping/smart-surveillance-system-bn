@@ -1,6 +1,8 @@
 import { AuthRequest } from "../middleware/authMiddleware";
 import SupervisedLocation from "../models/SupervisedLocation";
 import { Request, Response } from "express";
+import Camera from "../models/Camera";
+import Crime from "../models/Crime";
 
 export const getAllSupervisedLocations = async (
   req: AuthRequest,
@@ -22,20 +24,45 @@ export const createSupervisedLocation = async (
   res: Response
 ) => {
   try {
-    const { location, description } = req.body;
+    const { location, description, coordinates } = req.body;
 
-    if (!location) {
+    if (!location || location.trim() === "") {
+      res.status(400).json({ error: "Location name is required" });
+      return;
+    }
+
+    if (
+      !coordinates ||
+      !Array.isArray(coordinates) ||
+      coordinates.length !== 2
+    ) {
       res.status(400).json({
-        error: "Location name is required",
+        error: "Coordinates must be an array of [latitude, longitude]",
       });
       return;
     }
 
+    const [latitude, longitude] = coordinates;
+
+    if (
+      typeof latitude !== "number" ||
+      typeof longitude !== "number" ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      res.status(400).json({ error: "Invalid latitude or longitude values" });
+      return;
+    }
+
     const newLocation = await SupervisedLocation.create({
-      description,
-      location,
+      location: location.trim(),
+      description: description?.trim() || "",
+      coordinates,
       recordedBy: req.user?.id,
     });
+
     res.status(201).json(newLocation);
   } catch (error) {
     console.error("❌ Failed to create SupervisedLocation:", error);
@@ -67,7 +94,33 @@ export const deleteSupervisedLocation = async (
   res: Response
 ) => {
   try {
-    await SupervisedLocation.findByIdAndDelete(req.params.id);
+    const locationId = req.params.id;
+
+    // Check if there are cameras linked to this location
+    const camerasCount = await Camera.countDocuments({ location: locationId });
+
+    if (camerasCount > 0) {
+      res
+        .status(400)
+        .json({ error: "Cannot delete. Location has associated cameras." });
+      return;
+    }
+
+    // Check if there are crimes linked to this location
+    const crimesCount = await Crime.countDocuments({
+      crimeLocation: locationId,
+    });
+
+    if (crimesCount > 0) {
+      res.status(400).json({
+        error: "Cannot delete. Location has associated crime reports.",
+      });
+      return;
+    }
+
+    // If no dependencies, delete
+    await SupervisedLocation.findByIdAndDelete(locationId);
+
     res.status(204).send();
   } catch (error) {
     console.error("❌ Failed to delete SupervisedLocation:", error);

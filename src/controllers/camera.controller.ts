@@ -150,6 +150,10 @@ export const desactivateCamera = async (req: AuthRequest, res: Response) => {
     );
     if (!camera)
       res.status(403).json({ error: "Not allowed or camera not found" });
+    await SupervisedLocation.updateMany(
+      { cameras: { $in: [req.params.id] } },
+      { $pull: { cameras: req.params.id } }
+    );
     res.status(200).json(camera);
   } catch (error) {
     console.error("❌ Failed to update camera:", error);
