@@ -55,7 +55,7 @@ export const updateSupervisedLocation = async (
         new: true,
       }
     );
-    res.status(200).json(SupervisedLocation);
+    res.status(200).json(supervisedLocation);
   } catch (error) {
     console.error("❌ Failed to update SupervisedLocation:", error);
     res.status(400).json({ error: "Bad Request" });

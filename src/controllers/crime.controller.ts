@@ -172,6 +172,44 @@ export const getCrimeDashboardStats = async (req: Request, res: Response) => {
       return;
     }
 
+    // route: GET /api/crimes/hotspots
+
+    const crimeHotspots = await Crime.aggregate([
+      {
+        $lookup: {
+          from: "supervisedlocations",
+          localField: "crimeLocation",
+          foreignField: "_id",
+          as: "locationDetails",
+        },
+      },
+      { $unwind: "$locationDetails" },
+      {
+        $group: {
+          _id: "$crimeLocation",
+          crimeTypes: { $addToSet: "$crimeType" },
+          crimeCount: { $sum: 1 },
+          lastUpdated: { $max: "$updatedAt" },
+          location: { $first: "$locationDetails.location" },
+          coordinates: { $first: "$locationDetails.coordinates" }, // add coordinates in schema
+          description: { $first: "$locationDetails.description" },
+        },
+      },
+      {
+        $addFields: {
+          severity: {
+            $switch: {
+              branches: [
+                { case: { $gte: ["$crimeCount", 20] }, then: "high" },
+                { case: { $gte: ["$crimeCount", 10] }, then: "medium" },
+              ],
+              default: "low",
+            },
+          },
+        },
+      },
+    ]);
+
     res.json({
       totalCrimes,
       crimeRate: Number(crimeRate),
@@ -185,6 +223,7 @@ export const getCrimeDashboardStats = async (req: Request, res: Response) => {
       mostAffectedLocation:
         mostAffectedLocationAgg[0]?.location.location || null,
       emergencyDistribution,
+      crimeHotspots,
     });
   } catch (error) {
     console.error("❌ Failed to compute dashboard stats:", error);
