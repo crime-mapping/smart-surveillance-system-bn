@@ -218,13 +218,31 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     const tempCode = generateTempToken(user);
+    const html = `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
+    <h2 style="text-align: center; color: #333;">Smart Surveillance System Two-Factor Authentication Code</h2>
+    <p style="font-size: 16px; color: #555; text-align: center;">
+      Use the following code to complete your login:
+    </p>
+    <div style="font-size: 32px; font-weight: bold; color: #1a73e8; text-align: center; margin: 20px 0;">
+      ${tempCode}
+    </div>
+    <p style="font-size: 14px; color: #999; text-align: center;">
+      This code will expire in 5 minutes for your security.
+    </p>
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+    <p style="font-size: 12px; color: #bbb; text-align: center;">
+      If you did not request this code, please ignore this email.
+    </p>
+  </div>
+`;
 
     // If 2FA is enabled, return tempToken instead of final token
     if (user.twoFactorEnabled) {
       emailService.sendEmail({
-        to: "ishimweinstein@gmail.com",
+        to: user.email,
         subject: "Two Factor Authentication Code",
-        html: "Your Two Factor authentication code is " + tempCode,
+        html: html,
       });
       res.status(200).json({
         message: "2FA required",
