@@ -11,7 +11,7 @@ function generateEmailTemplate(content: string): string {
   return `
     <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
       <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="padding: 20px; text-align: center; background-color:rgb(24, 66, 129);">
+        <div style="padding: 20px; text-align: center; background-color:rgb(69, 119, 196);">
           <img src=${`https://smart-surveillance-system.netlify.app/real_logo.png`} alt="Smart Surveillance System Logo" style="max-height: 50px;" />
         </div>
         <div style="padding: 30px; color: #333;">

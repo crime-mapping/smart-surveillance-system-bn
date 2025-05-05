@@ -8,13 +8,14 @@ import {
   getSingleCrime,
 } from "../controllers/crime.controller";
 import authMiddleware from "../middleware/authMiddleware";
+import modelAuthMiddleware from "../middleware/modelAuthMiddleware";
 
 const router = express.Router();
 
 router.get("/", authMiddleware, getAllCrimes);
 router.get("/statistics", authMiddleware, getCrimeDashboardStats);
 router.get("/:id", authMiddleware, getSingleCrime);
-router.post("/", authMiddleware, createCrime);
+router.post("/", modelAuthMiddleware, createCrime);
 router.put("/:id", authMiddleware, updateCrime);
 router.delete("/:id", authMiddleware, deleteCrime);
 
