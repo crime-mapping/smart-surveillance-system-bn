@@ -32,7 +32,12 @@ app.use(
     ], // ✅ Allow frontend origin
     credentials: true, // ✅ Allow cookies and authorization headers
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    allowedHeaders: ["Content-Type", "Authorization", "X-API-Version"], // ✅ Allow these headers
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "model-api-key",
+      "X-API-Version",
+    ], // ✅ Allow these headers
   })
 );
 
