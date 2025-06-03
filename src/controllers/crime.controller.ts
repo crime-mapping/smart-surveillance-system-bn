@@ -1,5 +1,6 @@
-import Crime from "../models/Crime";
+import Crime, { CrimeType } from "../models/Crime";
 import { Request, Response } from "express";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 export const getAllCrimes = async (req: Request, res: Response) => {
   try {
@@ -227,6 +228,120 @@ export const getCrimeDashboardStats = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("❌ Failed to compute dashboard stats:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//predictive analytics
+export const getCrimeAnalytics = async (req: Request, res: Response) => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const months = Array.from({ length: 12 }, (_, i) => i);
+
+    // Dynamic types
+    const crimeTypes = Object.values(CrimeType);
+
+    const analytics = await Promise.all(
+      months.map(async (month) => {
+        const start = startOfMonth(new Date(currentYear, month));
+        const end = endOfMonth(new Date(currentYear, month));
+        const crimes = await Crime.find({
+          dateOfOccurrence: { $gte: start, $lte: end },
+        });
+
+        const counts: Record<string, number> = {};
+        crimeTypes.forEach((type) => {
+          counts[type] = crimes.filter((c) => c.crimeType === type).length;
+        });
+
+        return {
+          month: start.toLocaleString("default", { month: "short" }),
+          ...counts,
+        };
+      })
+    );
+
+    res.json({ analytics, crimeTypes });
+  } catch (error) {
+    console.error("Error in getCrimeAnalytics:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//Crime Hotpost Frequency
+export const getCrimeHospotFrequency = async (req: Request, res: Response) => {
+  try {
+    const results = await Crime.aggregate([
+      {
+        $group: {
+          _id: "$crimeLocation",
+          totalCrimes: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: "supervisedlocations",
+          localField: "_id",
+          foreignField: "_id",
+          as: "location",
+        },
+      },
+      {
+        $unwind: "$location",
+      },
+      {
+        $project: {
+          _id: 0,
+          location: "$location.location",
+          totalCrimes: 1,
+        },
+      },
+      { $sort: { totalCrimes: -1 } },
+    ]);
+
+    res.json(results);
+  } catch (err) {
+    console.error("Hotspot error:", err);
+    res.status(500).json({ error: "Failed to fetch hotspot data" });
+  }
+};
+
+//crimes per location
+export const getCrimesPerLocation = async (req: Request, res: Response) => {
+  try {
+    const result = await Crime.aggregate([
+      {
+        $group: {
+          _id: "$crimeLocation",
+          totalCrimes: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: "supervisedlocations",
+          localField: "_id",
+          foreignField: "_id",
+          as: "location",
+        },
+      },
+      {
+        $unwind: "$location",
+      },
+      {
+        $project: {
+          _id: 0,
+          location: "$location.location",
+          totalCrimes: 1,
+        },
+      },
+      {
+        $sort: { totalCrimes: -1 },
+      },
+    ]);
+
+    res.json(result);
+  } catch (error) {
+    console.error("❌ Error fetching crimes per location:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
