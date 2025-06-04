@@ -65,6 +65,20 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
+//toggling 2 factor authentication
+export const toggleTwoFactor = async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.user?.id);
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  user.twoFactorEnabled = !user.twoFactorEnabled;
+  await user.save();
+
+  res.status(200).json({ twoFactorEnabled: user.twoFactorEnabled });
+};
+
 export const changePassword = async (req: AuthRequest, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -251,6 +265,13 @@ export const loginUser = async (req: Request, res: Response) => {
       });
       return;
     }
+    if (user.blocked) {
+      res.status(403).json({
+        message:
+          "Your account has been blocked. Please contact Super Admin for more info!",
+      });
+      return;
+    }
     const token = createToken(user);
     res.cookie("authToken", token, {
       httpOnly: true, // 🛑 Prevents JavaScript access (protects against XSS attacks)
@@ -258,7 +279,7 @@ export const loginUser = async (req: Request, res: Response) => {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 1 * 60 * 60 * 1000,
     });
-    res.status(200).json({ message: "Login was successful", token });
+    res.status(200).json({ message: "Login was successful", token, user });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Something went wrong" });

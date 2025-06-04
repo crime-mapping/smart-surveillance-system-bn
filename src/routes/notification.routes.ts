@@ -11,7 +11,7 @@ import authMiddleware from "../middleware/authMiddleware";
 const router = express.Router();
 
 router.get("/", authMiddleware, getAllNotifications);
-router.post("/", authMiddleware, createNotification);
+router.post("/", createNotification);
 router.delete("/:id", authMiddleware, deleteNotification);
 
 router.patch("/:id/read", authMiddleware, markAsRead);
