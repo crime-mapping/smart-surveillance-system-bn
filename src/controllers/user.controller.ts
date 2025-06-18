@@ -8,6 +8,9 @@ import {
 } from "../services/twoFactor.service";
 import emailService from "../services/email.service";
 import { AuthRequest } from "../middleware/authMiddleware";
+import mongoose from "mongoose";
+
+const resetCodes = new Map();
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -377,6 +380,139 @@ export const logoutUser = async (
       .json({ message: "Logout successful. All cookies cleared!" });
   } catch (error) {
     console.error("❌ Error in logoutUser:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+/**
+ * ✅ Request Reset Code
+ */
+export const requestPasswordReset = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({ error: "Email is required!" });
+      return;
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404).json({ error: "User with that email doesn't exist!" });
+      return;
+    }
+
+    // ✅ Generate Reset Code (6-digit number, valid for 10 minutes)
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000;
+    const userId = user._id as mongoose.Types.ObjectId;
+    resetCodes.set(userId.toString(), { resetCode, expiresAt });
+
+    const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
+      <h2 style="text-align: center; color: #333;">Smart Surveillance System Reset Password code</h2>
+      <p style="font-size: 16px; color: #555; text-align: center;">
+        We received a request to reset your password. Use the code below to proceed:
+      </p>
+      <div style="font-size: 32px; font-weight: bold; color: #1a73e8; text-align: center; margin: 20px 0;">
+        ${resetCode}
+      </div>
+      <p style="font-size: 14px; color: #999; text-align: center;">
+        This code will expire in <strong>10 minutes</strong> for your security.
+      </p>
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+      <p style="font-size: 12px; color: #bbb; text-align: center;">
+        If you did not request this code, please ignore this email.
+      </p>
+    </div>
+  `;
+
+    await emailService.sendEmail({
+      to: user.email,
+      subject: "Password Reset Code",
+      html: html,
+    });
+
+    res.status(200).json({ message: "Reset code sent!" });
+  } catch (error) {
+    console.error("❌ Error in requestPasswordReset:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+/**
+ * ✅ Verify Reset Code
+ */
+export const verifyResetCode = async (req: Request, res: Response) => {
+  try {
+    const { email, resetCode } = req.body;
+
+    if (!resetCode) {
+      res.status(400).json({ error: "Reset code is required!" });
+      return;
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found!" });
+      return;
+    }
+    const userId = user._id as mongoose.Types.ObjectId;
+    const storedCode = resetCodes.get(userId.toString());
+    if (
+      !storedCode ||
+      storedCode.resetCode !== resetCode ||
+      Date.now() > storedCode.expiresAt
+    ) {
+      res.status(400).json({ error: "Invalid or expired reset code!" });
+      return;
+    }
+
+    res.status(200).json({ message: "Reset code verified!" });
+  } catch (error) {
+    console.error("❌ Error in verifyResetCode:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+/**
+ * ✅ Reset Password
+ */
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { email, resetCode, newPassword } = req.body;
+
+    if (!newPassword) {
+      res.status(400).json({ error: "New Password is required!" });
+      return;
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found!" });
+      return;
+    }
+    const userId = user._id as mongoose.Types.ObjectId;
+    const storedCode = resetCodes.get(userId.toString());
+    if (
+      !storedCode ||
+      storedCode.resetCode !== resetCode ||
+      Date.now() > storedCode.expiresAt
+    ) {
+      res.status(400).json({ error: "Invalid or expired reset code!" });
+      return;
+    }
+
+    user.password = newPassword;
+    await user.save();
+    resetCodes.delete(userId.toString());
+
+    res.status(200).json({ message: "Password reset successful!" });
+  } catch (error) {
+    console.error("❌ Error in resetPassword:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

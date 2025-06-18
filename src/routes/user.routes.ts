@@ -12,6 +12,9 @@ import {
   getSingleUser,
   changePassword,
   toggleTwoFactor,
+  requestPasswordReset,
+  verifyResetCode,
+  resetPassword,
 } from "../controllers/user.controller";
 import authMiddleware from "../middleware/authMiddleware";
 import superAdminMiddleware from "../middleware/superAdminMiddleware";
@@ -35,6 +38,9 @@ router.put(
 router.post("/login", loginUser);
 router.post("/google-login", loginWithGoogle);
 router.post("/two-factor", verifyTwoFactor);
+router.post("/request-reset", requestPasswordReset);
+router.post("/verify-reset", verifyResetCode);
+router.post("/reset-password", resetPassword);
 router.post("/logout", logoutUser);
 
 export default router;
