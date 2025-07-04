@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { io } from "../server";
 import Notification from "../models/Notification";
+import SupervisedLocation from "../models/SupervisedLocation";
 
 export const getAllCrimes = async (req: Request, res: Response) => {
   try {
@@ -30,12 +31,13 @@ export const getSingleCrime = async (req: Request, res: Response) => {
 export const createCrime = async (req: Request, res: Response) => {
   try {
     const crime = await Crime.create(req.body);
+    const location = await SupervisedLocation.findById(crime.crimeLocation);
     const newNotification = {
       title: `A new crime of ${crime.crimeType} was detected`,
-      description: `${crime.crimeType} was suspected at ${crime.crimeLocation} with ${crime.emergencyLevel} severity`,
+      description: `${crime.crimeType} was suspected at ${location?.location} with ${crime.emergencyLevel} severity`,
     };
     const notification = await Notification.create(newNotification);
-    io.emit("new-notification", notification);
+    io.emit("crime-notification", notification);
     res.status(201).json(crime);
   } catch (error) {
     console.error("❌ Failed to create crime:", error);
