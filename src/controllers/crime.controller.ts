@@ -1,6 +1,6 @@
 import Crime, { CrimeType } from "../models/Crime";
 import { Request, Response } from "express";
-import { startOfMonth, endOfMonth } from "date-fns";
+import { startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { io } from "../server";
 import Notification from "../models/Notification";
 import SupervisedLocation from "../models/SupervisedLocation";
@@ -70,9 +70,6 @@ export const deleteCrime = async (req: Request, res: Response) => {
 // GET /api/crimes/dashboard
 export const getCrimeDashboardStats = async (req: Request, res: Response) => {
   try {
-    const totalCrimes = await Crime.countDocuments();
-    const crimeRate = ((totalCrimes / 10000) * 100).toFixed(2); // Example rate
-
     const mostPopularCrime = await Crime.aggregate([
       {
         $group: {
@@ -101,27 +98,6 @@ export const getCrimeDashboardStats = async (req: Request, res: Response) => {
         },
       },
     ]);
-
-    const currentMonthTotal = monthlyCrimes[0]?.total || 0;
-    const previousMonthTotal = monthlyCrimes[1]?.total || 0;
-    const totalCrimesChange =
-      previousMonthTotal === 0
-        ? "+100%"
-        : `${(
-            ((currentMonthTotal - previousMonthTotal) / previousMonthTotal) *
-            100
-          ).toFixed(1)}%`;
-
-    const currentMonthRate = (currentMonthTotal / 10000) * 100;
-    const previousMonthRate = (previousMonthTotal / 10000) * 100;
-
-    const crimeRateChange =
-      previousMonthRate === 0
-        ? "+100%"
-        : `${(
-            ((currentMonthRate - previousMonthRate) / previousMonthRate) *
-            100
-          ).toFixed(1)}%`;
 
     const mostCommonCrimeTypeAgg = await Crime.aggregate([
       { $group: { _id: "$crimeType", count: { $sum: 1 } } },
@@ -165,6 +141,43 @@ export const getCrimeDashboardStats = async (req: Request, res: Response) => {
     const recentCrime = await Crime.findOne()
       .sort({ createdAt: -1 })
       .populate("crimeLocation");
+
+    const now = new Date();
+    const startOfCurrentMonth = startOfMonth(now);
+    const startOfPreviousMonth = startOfMonth(subMonths(now, 1));
+
+    const currentMonthTotal = await Crime.countDocuments({
+      dateOfOccurrence: { $gte: startOfCurrentMonth, $lt: now },
+    });
+
+    const previousMonthTotal = await Crime.countDocuments({
+      dateOfOccurrence: {
+        $gte: startOfPreviousMonth,
+        $lt: startOfCurrentMonth,
+      },
+    });
+
+    const totalCrimes = await Crime.countDocuments();
+    const crimeRate = ((currentMonthTotal / 10000) * 100).toFixed(2);
+
+    const totalCrimesChange =
+      previousMonthTotal === 0
+        ? "+100%"
+        : `${(
+            ((currentMonthTotal - previousMonthTotal) / previousMonthTotal) *
+            100
+          ).toFixed(1)}%`;
+
+    const currentMonthRate = (currentMonthTotal / 10000) * 100;
+    const previousMonthRate = (previousMonthTotal / 10000) * 100;
+
+    const crimeRateChange =
+      previousMonthRate === 0
+        ? "+100%"
+        : `${(
+            ((currentMonthRate - previousMonthRate) / previousMonthRate) *
+            100
+          ).toFixed(1)}%`;
 
     if (totalCrimes === 0) {
       res.status(200).json({
