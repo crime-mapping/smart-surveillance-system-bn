@@ -15,6 +15,7 @@ import {
   requestPasswordReset,
   verifyResetCode,
   resetPassword,
+  getUserProfile,
 } from "../controllers/user.controller";
 import authMiddleware from "../middleware/authMiddleware";
 import superAdminMiddleware from "../middleware/superAdminMiddleware";
@@ -23,12 +24,13 @@ const router = express.Router();
 
 router.get("/", authMiddleware, superAdminMiddleware, getAllUsers);
 router.post("/", authMiddleware, superAdminMiddleware, createUser);
-router.get("/:id", authMiddleware, getSingleUser);
+router.get("/single-user/:id", authMiddleware, getSingleUser);
 router.put("/access/:id", authMiddleware, superAdminMiddleware, userAccess);
 router.put("/update/:id", authMiddleware, updateUser);
-router.put("/profile", authMiddleware, updateUser);
+router.get("/profile", authMiddleware, getUserProfile);
 router.put("/change-password", authMiddleware, changePassword);
 router.patch("/toggle-2fa", authMiddleware, toggleTwoFactor);
+router.patch("/user-toggle-2fa/:id", authMiddleware, superAdminMiddleware, toggleTwoFactor);
 router.put(
   "/desactivate/:id",
   authMiddleware,

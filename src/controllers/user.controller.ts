@@ -25,7 +25,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const getSingleUser = async (req: AuthRequest, res: Response) => {
   try {
     const user = await User.findOne({
-      _id: req.user?.id,
+      _id: req.params.id,
       active: true,
     }).populate("lastUpdatedBy");
     if (user) {
@@ -37,6 +37,27 @@ export const getSingleUser = async (req: AuthRequest, res: Response) => {
     }
   } catch (error) {
     console.error("❌ Failed to fetch single user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const getUserProfile = async (req: AuthRequest, res: Response) => {
+  console.log("👤 req.user:", req.user);
+
+  try {
+    const user = await User.findOne({
+      _id: req.user?.id,
+      active: true,
+    }).populate("lastUpdatedBy");
+    if (user) {
+      res.status(200).json(user);
+      return;
+    } else {
+      res.status(400).json("User not found");
+      return;
+    }
+  } catch (error) {
+    console.error("❌ Failed to fetch user profile:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -71,6 +92,20 @@ export const createUser = async (req: Request, res: Response) => {
 //toggling 2 factor authentication
 export const toggleTwoFactor = async (req: AuthRequest, res: Response) => {
   const user = await User.findById(req.user?.id);
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  user.twoFactorEnabled = !user.twoFactorEnabled;
+  await user.save();
+
+  res.status(200).json({ twoFactorEnabled: user.twoFactorEnabled });
+};
+
+//toggling 2 factor authentication for other users
+export const toggleUserTwoFactor = async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.params.id);
   if (!user) {
     res.status(404).json({ error: "User not found" });
     return;
