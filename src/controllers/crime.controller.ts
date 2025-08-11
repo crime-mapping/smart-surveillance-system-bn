@@ -34,10 +34,11 @@ export const createCrime = async (req: Request, res: Response) => {
     const location = await SupervisedLocation.findById(crime.crimeLocation);
     const newNotification = {
       title: `A new crime of ${crime.crimeType} was detected`,
+      crimeId:crime._id,
       description: `${crime.crimeType} was suspected at ${location?.location} with ${crime.emergencyLevel} severity`,
     };
     const notification = await Notification.create(newNotification);
-    io.emit("crime-notification", notification);
+    io.emit("crime-notification", notification,crime);
     res.status(201).json(crime);
   } catch (error) {
     console.error("❌ Failed to create crime:", error);

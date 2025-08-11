@@ -5,6 +5,7 @@ import { BaseModelFields, BaseModelOptions } from "./BaseModel";
 export interface INotification extends Document {
   _id: Types.ObjectId;
   title: string;
+  crimeId:Types.ObjectId;
   description: string;
   timestamp: Date;
 }
@@ -12,6 +13,7 @@ export interface INotification extends Document {
 const NotificationSchema = new Schema<INotification>(
   {
     title: { type: String, required: true },
+    crimeId: { type: Schema.Types.ObjectId, ref: "Crime", required: true,},
     description: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
     ...BaseModelFields,

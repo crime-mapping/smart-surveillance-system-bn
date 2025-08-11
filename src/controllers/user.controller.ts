@@ -42,7 +42,6 @@ export const getSingleUser = async (req: AuthRequest, res: Response) => {
 };
 
 export const getUserProfile = async (req: AuthRequest, res: Response) => {
-  console.log("👤 req.user:", req.user);
 
   try {
     const user = await User.findOne({
