@@ -17,6 +17,7 @@ import {
   resetPassword,
   getUserProfile,
   toggleUserTwoFactor,
+  changeUserPassword,
 } from "../controllers/user.controller";
 import authMiddleware from "../middleware/authMiddleware";
 import superAdminMiddleware from "../middleware/superAdminMiddleware";
@@ -30,6 +31,7 @@ router.put("/access/:id", authMiddleware, superAdminMiddleware, userAccess);
 router.put("/update/:id", authMiddleware, updateUser);
 router.get("/profile", authMiddleware, getUserProfile);
 router.put("/change-password", authMiddleware, changePassword);
+router.put("/change-user-password/:id", authMiddleware, superAdminMiddleware,changeUserPassword);
 router.patch("/toggle-2fa", authMiddleware, toggleTwoFactor);
 router.patch("/user-toggle-2fa/:id", authMiddleware, superAdminMiddleware, toggleUserTwoFactor);
 router.put(

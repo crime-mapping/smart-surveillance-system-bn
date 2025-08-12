@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 import { BaseModelFields, BaseModelOptions } from "./BaseModel";
 
 export interface ICamera extends Document {
@@ -8,6 +8,7 @@ export interface ICamera extends Document {
   isConnected: boolean;
   location: mongoose.Schema.Types.ObjectId;
   recordedBy: mongoose.Schema.Types.ObjectId;
+  lastUpdatedBy: Types.ObjectId;
 }
 
 const CameraSchema = new Schema<ICamera>(

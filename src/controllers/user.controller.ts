@@ -154,6 +154,39 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const changeUserPassword = async (req: AuthRequest, res: Response) => {
+  try {
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      res
+        .status(404)
+        .json({ error: "New user password is required !" });
+      return;
+    }
+
+    if (!req.user?.id) {
+      res.status(401).json({
+        error: "Unauthorized. Please log in to change Your Password.",
+      });
+      return;
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: "User password updated successfully!" });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     const { names, phone, email, role } = req.body;
