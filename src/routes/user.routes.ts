@@ -21,10 +21,12 @@ import {
 } from "../controllers/user.controller";
 import authMiddleware from "../middleware/authMiddleware";
 import superAdminMiddleware from "../middleware/superAdminMiddleware";
+import modelAuthMiddleware from "../middleware/modelAuthMiddleware";
 
 const router = express.Router();
 
 router.get("/", authMiddleware, superAdminMiddleware, getAllUsers);
+router.get("/model-access", modelAuthMiddleware, getAllUsers);
 router.post("/", authMiddleware, superAdminMiddleware, createUser);
 router.get("/single-user/:id", authMiddleware, getSingleUser);
 router.put("/access/:id", authMiddleware, superAdminMiddleware, userAccess);
